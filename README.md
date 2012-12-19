@@ -10,11 +10,14 @@ This is intended as an orientation / helper to integrate PayPal Access in other 
 
 How it works
 ------------
-Basically the file app.js creates a webserver which provides three different endpoints:
+Basically the file app.js creates a webserver which provides six different endpoints:
 
 - **/** - this is just a plain index site that provides a button for the actual login
 - **/auth** - this endpoint redirects the user to PayPal and enables him to login
 - **/authz** - this is the callback url that will be used by PayPal to deliver the requested *authorization token*
+- **/refresh** - the current tokens can be refreshed here 
+- **/validate** - use this url to check the validity of your tokens
+- **/logout** - used to end the current session
 
 PayPal's endpoints
 -------------
