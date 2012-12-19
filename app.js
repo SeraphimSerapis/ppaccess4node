@@ -79,7 +79,7 @@ app.configure('development', function(){
  */
 
 app.get('/', function(req, res) {
-  res.render('index', { title: 'PayPal Access Demo' });
+  res.render('index');
 });
 
 /**
@@ -97,6 +97,31 @@ app.get('/authz', function(req, res) {
     console.log('status: ' + status);
   });
 });
+
+app.get('/validate', function(req, res) {
+  validateToken(res, function(status, body) {
+    console.log('status: ' + status);
+    res.end('Status: ' + status + '\nBody: ' + body);
+  });
+});
+
+app.get('/refresh', function(req, res) {
+  refreshToken(res, function(status, body) {
+    console.log('status: ' + status);
+    res.end('Status: ' + status + '\nBody: ' + body);
+  });
+});
+
+app.get('/logout', function(req, res) {
+  logout(res, function(status, body) {
+    console.log('status: ' + status);
+    res.redirect('/');
+  });
+});
+
+/**
+ * The OpenID Connect funtions
+ */
 
 function authorize(res, callback) {
 	var data = querystring.stringify({
@@ -118,7 +143,10 @@ function authorize(res, callback) {
       refresh_token = response.refresh_token;
       
       getProfile(res, function(status, body) {
-	     console.log('status: ' + status);
+        console.log('status: ' + status);
+        
+        var response = JSON.parse(body);
+        res.render('authorized', {name : response.name}); 
       });
     } else {
 	  res.end('Error when trying to receive token :(');
@@ -137,7 +165,6 @@ function getProfile(res, callback) {
 
   post(PROFILE_ENDPOINT, data, function(status, body) {
     callback(status, body);
-    res.end(body);
   }); 
 }
 
@@ -179,13 +206,13 @@ function refreshToken(res, callback) {
 function logout(res, callback) {
   var data = querystring.stringify({
   	'id_token' : id_token,
-    'redirect_url' : RETURN_URL_LOGOUT,
-	'logout' : 'true'
+    'redirect_uri' : RETURN_URL_LOGOUT,
+	'logout' : 'true',
+	'state' : new Date().getTime()
   });
 
   get(LOGOUT_ENDPOINT, data, function(status, body) {
     callback(status, body);
-    res.end(body);
   }); 
 }
 
@@ -198,11 +225,12 @@ function post(url, data, callback) {
   });
 }
 
+/**
+ * This method is used as a wrapper for GETs and provides a callback mechanism
+ */
 function get(url, data, callback) {
   var requestUrl = url + '?' + data;
-  console.log(requestUrl);
-  // (requestUrl, function (error, response, body) {
-  request.get({uri:url, json:true}, function(error, response, body) {
+  request.get(requestUrl, function(error, response, body) {
       callback(response.statusCode, body);
   });	
 }
